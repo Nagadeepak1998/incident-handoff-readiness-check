@@ -1,0 +1,30 @@
+{
+  "incidents": [
+    {
+      "id": "INC-1042",
+      "severity": "sev2",
+      "status": "monitoring",
+      "owner": "payments-platform",
+      "started_at": "2026-06-26T08:10:00-07:00",
+      "detected_at": "2026-06-26T08:14:00-07:00",
+      "next_update_at": "2026-06-26T10:30:00-07:00",
+      "impact_summary": "Checkout latency increased for a small set of card payments.",
+      "affected_services": ["checkout-api", "payment-worker"],
+      "mitigation": "Shifted traffic away from the degraded processor route.",
+      "next_action": "Watch error rate for 30 minutes before restoring normal routing.",
+      "rollback_plan": "Keep alternate processor route active if errors rise above 2%.",
+      "customer_comms_status": "sent",
+      "evidence_links": ["https://dashboards.example/incidents/INC-1042"],
+      "timeline_events": [
+        {
+          "at": "2026-06-26T08:14:00-07:00",
+          "note": "Alert fired for checkout latency."
+        },
+        {
+          "at": "2026-06-26T08:28:00-07:00",
+          "note": "Traffic shifted to alternate route."
+        }
+      ]
+    }
+  ]
+}

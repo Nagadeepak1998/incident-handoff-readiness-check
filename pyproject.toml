@@ -1,0 +1,18 @@
+[project]
+name = "incident-handoff-readiness-check"
+version = "0.1.0"
+description = "Dependency-free CLI for checking incident handoff readiness."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Naga Deepak Appalaneni" }]
+keywords = ["incident-management", "sre", "devops", "platform-engineering", "on-call"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Environment :: Console",
+    "Topic :: System :: Monitoring",
+]
+
+[project.scripts]
+incident-handoff-check = "incident_handoff_check:main"

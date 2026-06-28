@@ -1,0 +1,24 @@
+{
+  "incidents": [
+    {
+      "id": "INC-1043",
+      "severity": "sev2",
+      "status": "investigating",
+      "owner": "",
+      "started_at": "2026-06-26T09:10:00-07:00",
+      "detected_at": "2026-06-26T09:05:00-07:00",
+      "impact_summary": "",
+      "affected_services": [],
+      "mitigation": "",
+      "next_action": "",
+      "customer_comms_status": "",
+      "evidence_links": [],
+      "timeline_events": [
+        {
+          "at": "2026-06-26T09:05:00-07:00",
+          "note": "Alert fired."
+        }
+      ]
+    }
+  ]
+}
