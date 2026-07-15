@@ -15,6 +15,7 @@ This project turns those handoff expectations into a small deterministic check t
 - Requires next update times and rollback plans for open incidents.
 - Checks customer communication status for `sev1` and `sev2` incidents.
 - Requires follow-up notes for closed incidents.
+- Writes optional JSON, Markdown, and Prometheus-style reports for CI artifacts or reviewer packets.
 - Returns clear exit codes for automation:
   - `0`: handoff is ready
   - `1`: handoff has readiness issues
@@ -39,10 +40,14 @@ flowchart TD
     C --> E["ownership and next-action checks"]
     C --> F["impact, mitigation, and evidence checks"]
     C --> G["severity and status-specific checks"]
-    D --> H["CLI report and exit code"]
+    D --> H["Review summary"]
     E --> H
     F --> H
     G --> H
+    H --> I["CLI output and exit code"]
+    H --> J["Optional JSON report"]
+    H --> K["Optional Markdown report"]
+    H --> L["Optional metrics report"]
 ```
 
 ## Repository Structure
@@ -50,9 +55,16 @@ flowchart TD
 ```text
 .
 |-- Dockerfile
+|-- Makefile
 |-- README.md
+|-- docs
+|   `-- CASE_STUDY.md
 |-- incident_handoff_check.py
 |-- pyproject.toml
+|-- reports
+|   |-- risky_handoff_metrics.prom
+|   |-- risky_handoff_report.json
+|   `-- risky_handoff_report.md
 |-- samples
 |   |-- risky_handoff.json
 |   `-- safe_handoff.json
@@ -98,6 +110,36 @@ Expected output starts with:
 FLAGGED: 11 incident handoff issue(s) detected
 ```
 
+## Write Review Artifacts
+
+The CLI can write machine-readable JSON, reviewer-friendly Markdown, and
+Prometheus-style metrics without changing its exit-code behavior:
+
+```bash
+python3 incident_handoff_check.py samples/risky_handoff.json \
+  --json-out reports/risky_handoff_report.json \
+  --markdown-out reports/risky_handoff_report.md \
+  --metrics-out reports/risky_handoff_metrics.prom || true
+```
+
+You can also use the bundled targets:
+
+```bash
+make test
+make smoke
+make report
+```
+
+The generated JSON includes status, incident count, finding count, severity
+counts, owner coverage, and individual findings. The Markdown report is designed
+for release notes, handoff reviews, or incident-readiness pull request comments.
+The metrics output gives lightweight gauges and counters for dashboards or CI logs.
+
+## Case Study
+
+See `docs/CASE_STUDY.md` for the incident handoff scenario, design choices,
+operational use, verification path, and limitations.
+
 ## Run With Docker
 
 ```bash
@@ -123,6 +165,10 @@ PYTHONPATH=. python3 -m unittest discover -s tests
 ```bash
 python3 incident_handoff_check.py samples/safe_handoff.json
 python3 incident_handoff_check.py samples/risky_handoff.json || true
+python3 incident_handoff_check.py samples/risky_handoff.json \
+  --json-out reports/risky_handoff_report.json \
+  --markdown-out reports/risky_handoff_report.md \
+  --metrics-out reports/risky_handoff_metrics.prom || true
 ```
 
 The second command intentionally exits with `1` because the risky fixture is expected to be flagged.
@@ -132,12 +178,11 @@ The second command intentionally exits with `1` because the risky fixture is exp
 - Production support thinking for incident ownership transfers.
 - Practical SRE/DevOps readiness checks.
 - Deterministic validation logic that can fit into lightweight automation.
-- Clean CLI behavior with tests and fixtures.
+- Clean CLI behavior with tests, fixtures, and review artifacts.
 - Clear communication of operational risk without depending on external services.
 
 ## Future Improvements
 
-- Add JSON output for CI or dashboard ingestion.
 - Support a configurable policy file for team-specific handoff rules.
 - Add GitHub Actions CI once the publishing token includes `workflow` scope.
 - Add richer schema validation while keeping the no-dependency default path.

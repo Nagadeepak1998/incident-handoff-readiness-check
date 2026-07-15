@@ -1,0 +1,69 @@
+{
+  "status": "flagged",
+  "incident_count": 1,
+  "finding_count": 11,
+  "severity_counts": {
+    "HIGH": 5,
+    "MEDIUM": 6
+  },
+  "owner_counts": {
+    "unassigned": 1
+  },
+  "findings": [
+    {
+      "severity": "HIGH",
+      "incident": "INC-1043",
+      "message": "detected_at is before started_at"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "handoff needs at least two timeline events"
+    },
+    {
+      "severity": "HIGH",
+      "incident": "INC-1043",
+      "message": "missing current owner"
+    },
+    {
+      "severity": "HIGH",
+      "incident": "INC-1043",
+      "message": "missing next action for the receiving owner"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "open incident needs a valid next_update_at timestamp"
+    },
+    {
+      "severity": "HIGH",
+      "incident": "INC-1043",
+      "message": "missing customer or service impact summary"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "missing affected services"
+    },
+    {
+      "severity": "HIGH",
+      "incident": "INC-1043",
+      "message": "missing mitigation or current containment step"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "missing evidence links for dashboards, logs, or tickets"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "sev1/sev2 incidents need customer_comms_status"
+    },
+    {
+      "severity": "MEDIUM",
+      "incident": "INC-1043",
+      "message": "open incidents need a rollback or fallback plan"
+    }
+  ]
+}

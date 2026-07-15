@@ -1,0 +1,10 @@
+# HELP incident_handoff_reviews_total Incident handoff reviews by status.
+# TYPE incident_handoff_reviews_total counter
+incident_handoff_reviews_total{status="flagged"} 1
+# HELP incident_handoff_incidents_reviewed Incidents reviewed in the latest handoff check.
+# TYPE incident_handoff_incidents_reviewed gauge
+incident_handoff_incidents_reviewed 1
+# HELP incident_handoff_findings_total Incident handoff findings by severity.
+# TYPE incident_handoff_findings_total gauge
+incident_handoff_findings_total{severity="HIGH"} 5
+incident_handoff_findings_total{severity="MEDIUM"} 6

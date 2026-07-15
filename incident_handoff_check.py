@@ -27,6 +27,33 @@ class Finding:
         return f"[{self.severity}] {self.incident}: {self.message}"
 
 
+@dataclass(frozen=True)
+class ReviewReport:
+    status: str
+    incident_count: int
+    finding_count: int
+    severity_counts: dict[str, int]
+    owner_counts: dict[str, int]
+    findings: list[Finding]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "incident_count": self.incident_count,
+            "finding_count": self.finding_count,
+            "severity_counts": self.severity_counts,
+            "owner_counts": self.owner_counts,
+            "findings": [
+                {
+                    "severity": finding.severity,
+                    "incident": finding.incident,
+                    "message": finding.message,
+                }
+                for finding in self.findings
+            ],
+        }
+
+
 def has_text(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -155,11 +182,86 @@ def review_incidents(incidents: list[dict[str, Any]]) -> list[Finding]:
     return findings
 
 
+def build_review_report(incidents: list[dict[str, Any]]) -> ReviewReport:
+    findings = review_incidents(incidents)
+    severity_counts = {"HIGH": 0, "MEDIUM": 0}
+    for finding in findings:
+        severity_counts[finding.severity] = severity_counts.get(finding.severity, 0) + 1
+
+    owner_counts: dict[str, int] = {}
+    for incident in incidents:
+        owner = str(incident.get("owner", "")).strip() or "unassigned"
+        owner_counts[owner] = owner_counts.get(owner, 0) + 1
+
+    return ReviewReport(
+        status="pass" if not findings else "flagged",
+        incident_count=len(incidents),
+        finding_count=len(findings),
+        severity_counts=severity_counts,
+        owner_counts=dict(sorted(owner_counts.items())),
+        findings=findings,
+    )
+
+
+def render_markdown_report(report: ReviewReport) -> str:
+    lines = [
+        "# Incident Handoff Readiness Report",
+        "",
+        f"- Status: `{report.status}`",
+        f"- Incidents reviewed: {report.incident_count}",
+        f"- Findings: {report.finding_count}",
+        f"- High severity: {report.severity_counts.get('HIGH', 0)}",
+        f"- Medium severity: {report.severity_counts.get('MEDIUM', 0)}",
+        "",
+        "## Owner Coverage",
+        "",
+        "| Owner | Incidents |",
+        "| --- | ---: |",
+    ]
+    for owner, count in report.owner_counts.items():
+        lines.append(f"| {owner} | {count} |")
+
+    lines.extend(["", "## Findings", ""])
+    if not report.findings:
+        lines.append("No readiness gaps detected.")
+    else:
+        lines.extend(["| Severity | Incident | Finding |", "| --- | --- | --- |"])
+        for finding in report.findings:
+            lines.append(f"| {finding.severity} | {finding.incident} | {finding.message} |")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_metrics_report(report: ReviewReport) -> str:
+    lines = [
+        "# HELP incident_handoff_reviews_total Incident handoff reviews by status.",
+        "# TYPE incident_handoff_reviews_total counter",
+        f'incident_handoff_reviews_total{{status="{report.status}"}} 1',
+        "# HELP incident_handoff_incidents_reviewed Incidents reviewed in the latest handoff check.",
+        "# TYPE incident_handoff_incidents_reviewed gauge",
+        f"incident_handoff_incidents_reviewed {report.incident_count}",
+        "# HELP incident_handoff_findings_total Incident handoff findings by severity.",
+        "# TYPE incident_handoff_findings_total gauge",
+    ]
+    for severity, count in sorted(report.severity_counts.items()):
+        lines.append(f'incident_handoff_findings_total{{severity="{severity}"}} {count}')
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Review incident handoff JSON for missing operational context."
     )
     parser.add_argument("handoff", type=Path, help="Incident handoff JSON")
+    parser.add_argument("--json-out", type=Path, help="Write a machine-readable JSON report")
+    parser.add_argument("--markdown-out", type=Path, help="Write a reviewer-friendly Markdown report")
+    parser.add_argument("--metrics-out", type=Path, help="Write Prometheus-style metrics text")
     return parser
 
 
@@ -173,13 +275,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    findings = review_incidents(incidents)
-    if not findings:
+    report = build_review_report(incidents)
+    if args.json_out:
+        write_text(args.json_out, json.dumps(report.to_dict(), indent=2) + "\n")
+    if args.markdown_out:
+        write_text(args.markdown_out, render_markdown_report(report))
+    if args.metrics_out:
+        write_text(args.metrics_out, render_metrics_report(report))
+
+    if not report.findings:
         print("PASS: incident handoff is ready for the next owner")
         return 0
 
-    print(f"FLAGGED: {len(findings)} incident handoff issue(s) detected")
-    for finding in findings:
+    print(f"FLAGGED: {report.finding_count} incident handoff issue(s) detected")
+    for finding in report.findings:
         print(f"- {finding.render()}")
     return 1
 
